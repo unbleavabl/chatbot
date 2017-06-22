@@ -56,16 +56,15 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-
-def create_event(date,start_time,end_time):
+def create_event():
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
     summary = "Summary"
     description = "Description goes here"
     GMT_OFF = '+05:30'
-    start_time = date + 'T' + start_time + GMT_OFF
-    end_time = date + 'T' + end_time + GMT_OFF
+    start_time = '2017-06-01T09:00:00%s'% GMT_OFF
+    end_time = '2017-06-01T10:00:00%s'% GMT_OFF
     EVENT = {
         'summary' : summary,
         'start' : {'dateTime' : start_time},
@@ -74,7 +73,6 @@ def create_event(date,start_time,end_time):
     e = service.events().insert(calendarId = 'primary',
                                 sendNotifications=True, body=EVENT).execute()
     print ("Event added")
-
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -86,49 +84,10 @@ def webhook():
     res = processRequest(req)
 
     res = json.dumps(res, indent=4)
+    # print(res)
     r = make_response(res)
     r.headers['Content-Type'] = 'application/json'
     return r
 
-def processRequest(req):
-    if req.get("result").get("action") != "createEvent":
-        return {}
-    parameters = req.get('result').get('parameters')
-    if parameters is None:
-        return {}
-
-    date = parameters.get('date')
-    if date is None:
-        return{}
-
-    start_time = parameters.get('start_time')
-    if start_time is None:
-        return {}
-
-    end_time = result.get('channel')
-    if end_time is None:
-        return {}
-
-    create_event(date,start_time,end_time)
-    res = makeWebhookResult(date,start_time,end_time)
-
-    return res
-
-def makeWebhookResult(date,start_time,end_time):
-    speech = "Event booked on " + date +" at "+ start_time + " until " + end_time
-
-    print("Response:")
-    print(speech)
-
-    return {
-        "speech": speech,
-        "displayText": speech,
-        "source": "app.py"
-    }
-
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-
-    print("Starting app on port %d" % port)
-
-    app.run(debug=False, port=port, host='0.0.0.0')
+    main()
